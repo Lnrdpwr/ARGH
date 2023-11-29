@@ -50,9 +50,12 @@ public class PlayerMovement : MonoBeahviout
         if (_lockMovement) return;
 
         if (Input.GetKeyDown(KeyCode.Space) && _onGround && _canJump)
+        {
             Jump(new Vector2(_rigidbody.velocity.x, _jumpForce));
-            if(_sliding)
-                StartCoroutine(WallJump(_horizontalInput * -1))
+                if(_sliding)
+                    StartCoroutine(WallJump(_horizontalInput * -1))
+        }
+            
         else if (Input.GetKeyDown(KeyCode.LeftShift) && _canDash)
             StartCoroutine(Dash());
     }
