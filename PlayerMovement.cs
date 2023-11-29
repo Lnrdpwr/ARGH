@@ -1,19 +1,18 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class PlayerMovement : MonoBeahviout
 {
     [Header("Передвижение")]
     [SerializeField] private float _speed;
+    private float _horizontalInput;
 
     [Header("Прыжок")]
     [SerializeField] private Transform _jumpChecker;
     [SerializeField] private LayerMask _ground;
     [SerializeField] private float _jumpForce;
-    [SerializeField] private int _maxJumps;
     private bool _onGround;
     private bool _canJump = true;
-    private int _jumpsCount;
 
     [Header("Дэш")]
     [SerializeField] private float _dashSpeed;
@@ -21,39 +20,60 @@ public class PlayerMovement : MonoBeahviout
     [SerializeField] private float _dashReload;
     private bool _canDash = true;
 
+    [Header("Скольжение по стенам")]
+    [SerializeField] private LayerMask _walls;
+    [SerializeField] private GameObject _slideEffect;
+    [SerializeField] private float _slideSpeed;
+    private bool _sliding;
+
     private Rigidbody2D _rigidbody;
     private bool _lockMovement = false;
 
     private void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
-        _jumpsCount = _maxJumps;
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         if (_lockMovement) return;
 
-        float horizontalInput = Input.GetAxisRaw("Horizontal");
-        _rigidbody.velocity = new Vector2(horizontalInput * _speed, _rigidbody.velocity.y);
+        _horizontalInput = Input.GetAxisRaw("Horizontal");
+        _rigidbody.velocity = new Vector2(_horizontalInput * _speed, _rigidbody.velocity.y);
 
         _onGround = Physics2D.OverlapCircle(_jumpChecker.position, 0.1f, _ground);
-        if(_onGround && _jumpsCount != _maxJumps)
-            _jumpsCount = _maxJumps;
+        _sliding = Physics2D.Raycast(transform.position, new Vector2(_horizontalInput, 0), 0.5f, _walls)
     }
 
-    void Update()
+    private void Update()
     {
         if (_lockMovement) return;
 
-        if (Input.GetKeyDown(KeyCode.Space) && _jumpsCount > 0 && _canJump)
-        {
-            _rigidbody.velocity = new Vector2(_rigidbody.velocity.x, _jumpForce);
-            _jumpsCount--;
-            StartCoroutine(BlockJump());
-        }
+        if (Input.GetKeyDown(KeyCode.Space) && _onGround && _canJump)
+            Jump(new Vector2(_rigidbody.velocity.x, _jumpForce));
+            if(_sliding)
+                StartCoroutine(WallJump(_horizontalInput * -1))
         else if (Input.GetKeyDown(KeyCode.LeftShift) && _canDash)
             StartCoroutine(Dash());
+    }
+
+    private void Jump(Vector2 dircetion)
+    {
+        _rigidbody.velocity = direction;
+        StartCoroutine(BlockJump());
+    }
+
+    IEnumerator WallJump(int direction)
+    {
+        _lockMovement = true;
+
+        for(float i = 0; i < 0.25f; i += Time.deltaTime)
+        {   
+            float xVelocity = Mathf.Lerp(_speed * direction, 0, i / 0.25f)
+            _rigidbody.velocity = new Vector2(xVelocity, _rigidbody.velocity.y);
+        }
+
+        _lockMovement = false;
     }
 
     IEnumerator Dash()
