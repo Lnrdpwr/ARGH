@@ -10,8 +10,10 @@ public class PlayerMovement : MonoBeahviout
     [SerializeField] private Transform _jumpChecker;
     [SerializeField] private LayerMask _ground;
     [SerializeField] private float _jumpForce;
+    [SerializeField] private int _maxJumps;
     private bool _onGround;
     private bool _canJump = true;
+    private int _jumpsCount;
 
     [Header("Дэш")]
     [SerializeField] private float _dashSpeed;
@@ -25,6 +27,7 @@ public class PlayerMovement : MonoBeahviout
     private void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
+        _jumpsCount = _maxJumps;
     }
 
     void FixedUpdate()
@@ -35,15 +38,18 @@ public class PlayerMovement : MonoBeahviout
         _rigidbody.velocity = new Vector2(horizontalInput * _speed, _rigidbody.velocity.y);
 
         _onGround = Physics2D.OverlapCircle(_jumpChecker.position, 0.1f, _ground);
+        if(_onGround && _jumpsCount != _maxJumps)
+            _jumpsCount = _maxJumps;
     }
 
     void Update()
     {
         if (_lockMovement) return;
 
-        if (Input.GetKeyDown(KeyCode.Space) && _onGround && _canJump)
+        if (Input.GetKeyDown(KeyCode.Space) && _jumpsCount > 0 && _canJump)
         {
             _rigidbody.velocity = new Vector2(_rigidbody.velocity.x, _jumpForce);
+            _jumpsCount--;
             StartCoroutine(BlockJump());
         }
         else if (Input.GetKeyDown(KeyCode.LeftShift) && _canDash)
